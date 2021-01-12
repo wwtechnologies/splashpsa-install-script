@@ -73,15 +73,15 @@ cd /var/www/${domain}
 git clone https://github.com/johnnyq/itflow.git
 
 #Move files and fix permissions
-mv /var/www/${domain}/pittpc_crm/* /var/www/${domain}/
-rm -rf /var/www/${domain}/pittpc_crm/
+mv /var/www/${domain}/itflow/* /var/www/${domain}/
+rm -rf /var/www/${domain}/itflow/
 chown -R www-data:www-data /var/www/
 
 
 #Create MySQl DB
-    mysql -e "CREATE DATABASE ITFlow /*\!40100 DEFAULT CHARACTER SET utf8 */;"
-    mysql -e "CREATE USER PITTCRM@localhost IDENTIFIED BY '${mysqlpwd}';"
-    mysql -e "GRANT ALL PRIVILEGES ON ITFlow.* TO 'ITFlow'@'localhost';"
+    mysql -e "CREATE DATABASE itflow /*\!40100 DEFAULT CHARACTER SET utf8 */;"
+    mysql -e "CREATE USER itflow@localhost IDENTIFIED BY '${mysqlpwd}';"
+    mysql -e "GRANT ALL PRIVILEGES ON itflow.* TO 'itflow'@'localhost';"
     mysql -e "FLUSH PRIVILEGES;"
 
 printf >&2 "Please go to admin url: https://${domain}"
