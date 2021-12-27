@@ -23,8 +23,8 @@ sudo apt-get update && sudo apt-get -y upgrade
 
 #Install apache2 & mysql
 sudo apt-get install -y apache2
-sudo apt-get install -y mysql-server
-sudo mysql_secure_installation
+sudo apt-get install -y mariadb-server
+sudo mariadb_secure_installation
 sudo apt-get install -y php libapache2-mod-php php-mysql php-mbstring php-curl 
 sudo apt-get install -y rewrite libapache2-mod-md
 sudo apt-get install -y certbot python3-certbot-apache
@@ -33,7 +33,7 @@ sudo a2enmod md
 sudo a2enmod ssl
 
 #Restart apache2
-sudo service apache2 restart
+sudo systemctl restart apache2
 
 #Set firewall
 sudo ufw allow OpenSSH
@@ -50,7 +50,6 @@ apache2="$(cat << EOF
 <VirtualHost *:80>
     ServerAdmin webmaster@localhost
     ServerName ${domain}
-    ServerAlias ${domain}
     DocumentRoot /var/www/${domain}
     ErrorLog /\${APACHE_LOG_DIR}/error.log
     CustomLog /\${APACHE_LOG_DIR}/access.log combined
@@ -70,13 +69,10 @@ sudo certbot --apache
 cd /var/www/${domain}
 
 #Clone IT Flow CRM
-git clone https://github.com/johnnyq/itflow.git
+git clone https://github.com/johnnyq/itflow.git .
 
-#Move files and fix permissions
-mv /var/www/${domain}/itflow/* /var/www/${domain}/
-rm -rf /var/www/${domain}/itflow/
+#Set permissions
 chown -R www-data:www-data /var/www/
-
 
 #Create MySQl DB
     mysql -e "CREATE DATABASE itflow /*\!40100 DEFAULT CHARACTER SET utf8 */;"
@@ -86,7 +82,7 @@ chown -R www-data:www-data /var/www/
 
 printf >&2 "Please go to admin url: https://${domain}"
 printf >&2 "\n\n"
-printf >&2 "Enter ITFlow as database user and database name. Enter '${mysqlpwd}' as MySQL Password\n\n"
+printf >&2 "Enter itflow as database user and database name. Enter '${mysqlpwd}' as MySQL Password\n\n"
 
 echo "Press any key to finish install"
 while [ true ] ; do
