@@ -1,7 +1,7 @@
-#check if running on ubuntu 20.04
-UBU20=$(grep 20.04 "/etc/"*"release")
+#Check if running on ubuntu 22.04
+UBU20=$(grep 22.04 "/etc/"*"release")
 if ! [[ $UBU20 ]]; then
-  echo -ne "\033[0;31mThis script will only work on Ubuntu 20.04\e[0m\n"
+  echo -ne "\033[0;31mThis script will only work on Ubuntu 22.04\e[0m\n"
   exit 1
 fi
 
@@ -25,7 +25,7 @@ sudo apt-get update && sudo apt-get -y upgrade
 sudo apt-get install -y apache2
 sudo apt-get install -y mariadb-server
 sudo mariadb_secure_installation
-sudo apt-get install -y php libapache2-mod-php php-mysql php-mbstring php-curl 
+sudo apt-get install -y php libapache2-mod-php php-intl php-mysqli php-curl 
 sudo apt-get install -y rewrite libapache2-mod-md
 sudo apt-get install -y certbot python3-certbot-apache
 sudo apt-get install -y git
@@ -68,8 +68,8 @@ sudo certbot --apache
 #Go to webroot
 cd /var/www/${domain}
 
-#Clone IT Flow CRM
-git clone https://github.com/johnnyq/itflow.git .
+#Clone ITFlow
+git clone https://github.com/itflow-org/itflow.git .
 
 #Set permissions
 chown -R www-data:www-data /var/www/
