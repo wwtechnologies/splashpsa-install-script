@@ -13,7 +13,7 @@ read domain
 done
 
 #Generate mysql password
-mysqlpwd=$(cat /dev/urandom | tr -dc 'A-Za-z0-9%&+?@^~' | fold -w 20 | head -n 1)
+mysqlpwd=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
 
 echo ${mysqlpwd}
 pause 
@@ -62,8 +62,8 @@ sudo a2ensite ${domain}.conf
 sudo a2dissite 000-default.conf
 sudo systemctl restart apache2
 
-#run certification
-sudo certbot --apache
+#Run certbot to get Free Lets Encrypt TLS Certificate
+sudo certbot --apache --non-interactive --agree-tos --register-unsafely-without-email --domains ${domain}
 
 #Go to webroot
 cd /var/www/${domain}
