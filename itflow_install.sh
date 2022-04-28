@@ -1,6 +1,6 @@
 #Check if running on ubuntu 22.04
-UBU20=$(grep 22.04 "/etc/"*"release")
-if ! [[ $UBU20 ]]; then
+UBU22=$(grep 22.04 "/etc/"*"release")
+if ! [[ $UBU22 ]]; then
   echo -ne "\033[0;31mThis script will only work on Ubuntu 22.04\e[0m\n"
   exit 1
 fi
@@ -12,16 +12,13 @@ echo -ne "Enter your Domain${NC}: "
 read domain
 done
 
-#Generate mysql password
-mysqlpwd=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
-
-echo ${mysqlpwd}
-pause 
+#Generate mariadb password
+mariadbpwd=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
 
 #run update
 sudo apt-get update && sudo apt-get -y upgrade
 
-#Install apache2 & mysql
+#Install apache2 & mariadb
 sudo apt-get install -y apache2
 sudo apt-get install -y mariadb-server
 sudo mariadb_secure_installation
@@ -76,20 +73,10 @@ chown -R www-data:www-data /var/www/
 
 #Create MySQl DB
     mysql -e "CREATE DATABASE itflow /*\!40100 DEFAULT CHARACTER SET utf8 */;"
-    mysql -e "CREATE USER itflow@localhost IDENTIFIED BY '${mysqlpwd}';"
+    mysql -e "CREATE USER itflow@localhost IDENTIFIED BY '${mariadbpwd}';"
     mysql -e "GRANT ALL PRIVILEGES ON itflow.* TO 'itflow'@'localhost';"
     mysql -e "FLUSH PRIVILEGES;"
 
 printf >&2 "Please go to admin url: https://${domain}"
 printf >&2 "\n\n"
-printf >&2 "Enter itflow as database user and database name. Enter '${mysqlpwd}' as MySQL Password\n\n"
-
-echo "Press any key to finish install"
-while [ true ] ; do
-read -t 3 -n 1
-if [ $? = 0 ] ; then
-exit ;
-else
-echo "waiting for the keypress"
-fi
-done
+printf >&2 "Enter itflow as database user and database name. Enter ${mariadbpwd} as database Password\n\n"
