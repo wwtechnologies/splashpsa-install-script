@@ -22,7 +22,7 @@ sudo apt-get update && sudo apt-get -y upgrade
 sudo apt-get install -y apache2
 sudo apt-get install -y mariadb-server
 sudo mariadb_secure_installation
-sudo apt-get install -y php libapache2-mod-php php-intl php-mysqli php-curl 
+sudo apt-get install -y php libapache2-mod-php php-intl php-mysqli php-curl php-imap php-mailparse 
 sudo apt-get install -y rewrite libapache2-mod-md
 sudo apt-get install -y certbot python3-certbot-apache
 sudo apt-get install -y git
