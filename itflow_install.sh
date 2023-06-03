@@ -76,7 +76,9 @@ git clone https://github.com/itflow-org/itflow.git .
 (crontab -l 2>/dev/null; echo "* * * * * php -u www-data /var/www/${domain}/cron_ticket_email_parser.php ${cronkey}") | crontab -
 
 #Create temp file with the cronkey that setup will read and use
-echo "${cronkey}" > /var/www/${domain}/uploads/tmp/cronkey.php
+echo "<?php" > /var/www/${domain}/uploads/tmp/cronkey.php
+echo "\$itflow_install_script_generated_cronkey = \"${cronkey}\";" >> /var/www/${domain}/uploads/tmp/cronkey.php
+echo "?>" >> /var/www/${domain}/uploads/tmp/cronkey.php
 
 #Set permissions
 chown -R www-data:www-data /var/www/
