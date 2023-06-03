@@ -15,6 +15,9 @@ done
 #Generate mariadb password
 mariadbpwd=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
 
+#Generate Cron Key
+cronkey=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
+
 #run update
 sudo apt-get update && sudo apt-get -y upgrade
 
@@ -68,6 +71,13 @@ cd /var/www/${domain}
 #Clone ITFlow
 git clone https://github.com/itflow-org/itflow.git .
 
+#Add Cronjobs
+(crontab -l 2>/dev/null; echo "0 2 * * * php -u www-data /var/www/${domain}/cron.php ${cronkey}") | crontab -
+(crontab -l 2>/dev/null; echo "* * * * * php -u www-data /var/www/${domain}/cron_ticket_email_parser.php ${cronkey}") | crontab -
+
+#Create temp file with the cronkey that setup will read and use
+echo "${cronkey}" > /var/www/${domain}/uploads/tmp/cronkey.php
+
 #Set permissions
 chown -R www-data:www-data /var/www/
 
@@ -79,4 +89,7 @@ chown -R www-data:www-data /var/www/
 
 printf >&2 "Please go to admin url: https://${domain}"
 printf >&2 "\n\n"
-printf >&2 "Enter itflow as database user and database name. Enter ${mariadbpwd} as database Password\n\n"
+printf >&2 "In database setup enter the following:\n\n"
+printf >&2 "Database User: itflow\n"
+printf >&2 "Database Name: itflow\n"
+prinff >&2 "Database Password: ${mariadbpwd} as database Password\n\n"
