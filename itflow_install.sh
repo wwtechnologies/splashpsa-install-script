@@ -72,8 +72,8 @@ cd /var/www/${domain}
 git clone https://github.com/itflow-org/itflow.git .
 
 #Add Cronjobs
-(crontab -l 2>/dev/null; echo "0 2 * * * php -u www-data /var/www/${domain}/cron.php ${cronkey}") | crontab -
-(crontab -l 2>/dev/null; echo "* * * * * php -u www-data /var/www/${domain}/cron_ticket_email_parser.php ${cronkey}") | crontab -
+(crontab -l 2>/dev/null; echo "0 2 * * * sudo -u www-data php /var/www/${domain}/cron.php ${cronkey}") | crontab -
+(crontab -l 2>/dev/null; echo "* * * * * sudo -u www-data php /var/www/${domain}/cron_ticket_email_parser.php ${cronkey}") | crontab -
 
 #Create temp file with the cronkey that setup will read and use
 echo "<?php" > /var/www/${domain}/uploads/tmp/cronkey.php
