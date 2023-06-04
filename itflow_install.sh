@@ -18,7 +18,7 @@ mariadbpwd=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
 #Generate Cron Key
 cronkey=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
 
-#run update
+#Get the latest OS updates
 sudo apt-get update && sudo apt-get -y upgrade
 
 #Install apache2 & mariadb
@@ -89,9 +89,9 @@ chown -R www-data:www-data /var/www/
     mysql -e "GRANT ALL PRIVILEGES ON itflow.* TO 'itflow'@'localhost';"
     mysql -e "FLUSH PRIVILEGES;"
 
-printf >&2 "Please go to admin url: https://${domain}"
+printf >&2 "Please go to https://${domain} to finish setting up ITFlow"
 printf >&2 "\n\n"
-printf >&2 "In database setup enter the following:\n\n"
+printf >&2 "In database setup section enter the following:\n\n"
 printf >&2 "Database User: itflow\n"
 printf >&2 "Database Name: itflow\n"
 printf >&2 "Database Password: ${mariadbpwd} \n\n"
