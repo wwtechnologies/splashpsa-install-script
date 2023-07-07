@@ -1,5 +1,11 @@
+# Check to make sure your root
+if [[ $EUID -ne 0 ]]; then
+  echo -ne "\033[0;31mThis script must be run as root.\e[0m\n"
+  exit 1
+fi
+
 # Check if running on Ubuntu 22.04 or Debian 12
-OS_Check=$(grep -E "22.04|Debian 12" "/etc/"*"release")
+OS_Check=$(grep -E "22.04|12" "/etc/"*"release")
 if ! [[ $OS_Check ]]; then
     echo -ne "\033[0;31mThis script will only work on Ubuntu 22.04 or Debian 12\e[0m\n"
     exit 1
@@ -19,26 +25,27 @@ mariadbpwd=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
 cronkey=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
 
 # Get the latest OS updates
-sudo apt-get update && sudo apt-get -y upgrade
+apt-get update && apt-get -y upgrade
 
 # Install apache2 & mariadb
-sudo apt-get install -y apache2
-sudo apt-get install -y mariadb-server
-sudo mariadb_secure_installation
-sudo apt-get install -y php libapache2-mod-php php-intl php-mysqli php-curl php-imap php-mailparse 
-sudo apt-get install -y rewrite libapache2-mod-md
-sudo apt-get install -y certbot python3-certbot-apache
-sudo apt-get install -y git
-sudo a2enmod md
-sudo a2enmod ssl
+apt-get install -y apache2
+apt-get install -y mariadb-server
+mariadb_secure_installation
+apt-get install -y php libapache2-mod-php php-intl php-mysqli php-curl php-imap php-mailparse 
+apt-get install -y rewrite libapache2-mod-md
+apt-get install -y certbot python3-certbot-apache
+apt-get install -y git
+apt-get install -y sudo
+a2enmod md
+a2enmod ssl
 
 # Restart apache2
-sudo systemctl restart apache2
+systemctl restart apache2
 
 # Set firewall
-# sudo ufw allow OpenSSH
-# sudo ufw allow 'Apache Full'
-# sudo ufw enable
+# ufw allow OpenSSH
+# ufw allow 'Apache Full'
+# ufw enable
 
 # Create and set permissions on webroot
 mkdir /var/www/${domain}
@@ -58,12 +65,12 @@ EOF
 )"
 echo "${apache2}" > /etc/apache2/sites-available/${domain}.conf
 
-sudo a2ensite ${domain}.conf
-sudo a2dissite 000-default.conf
-sudo systemctl restart apache2
+a2ensite ${domain}.conf
+a2dissite 000-default.conf
+systemctl restart apache2
 
 # Run certbot to get Free Lets Encrypt TLS Certificate
-sudo certbot --apache --non-interactive --agree-tos --register-unsafely-without-email --domains ${domain}
+certbot --apache --non-interactive --agree-tos --register-unsafely-without-email --domains ${domain}
 
 # Go to webroot
 cd /var/www/${domain}
