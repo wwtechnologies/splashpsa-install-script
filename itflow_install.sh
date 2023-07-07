@@ -14,7 +14,7 @@ fi
 # Enter domain
 while [[ $domain != *[.]*[.]* ]]
 do
-    echo -ne "Enter your Domain${NC}: "
+    echo -ne "Enter your Fully Qualified Domain -- example (itflow.domain.com)${NC}: "
     read domain
 done
 
