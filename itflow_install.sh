@@ -1,9 +1,9 @@
 #Check if running on ubuntu 22.04
-UBU22=$(grep 22.04 "/etc/"*"release")
-if ! [[ $UBU22 ]]; then
-  echo -ne "\033[0;31mThis script will only work on Ubuntu 22.04\e[0m\n"
-  exit 1
-fi
+#UBU22=$(grep 22.04 "/etc/"*"release")
+#if ! [[ $UBU22 ]]; then
+#  echo -ne "\033[0;31mThis script will only work on Ubuntu 22.04\e[0m\n"
+#  exit 1
+#fi
 
 #Enter domain
 while [[ $domain != *[.]*[.]* ]]
@@ -74,6 +74,7 @@ git clone https://github.com/itflow-org/itflow.git .
 #Add Cronjobs
 (crontab -l 2>/dev/null; echo "0 2 * * * sudo -u www-data php /var/www/${domain}/cron.php ${cronkey}") | crontab -
 (crontab -l 2>/dev/null; echo "* * * * * sudo -u www-data php /var/www/${domain}/cron_ticket_email_parser.php ${cronkey}") | crontab -
+(crontab -l 2>/dev/null; echo "* * * * * sudo -u www-data php /var/www/${domain}/cron_mail_queue.php ${cronkey}") | crontab -
 
 #Create temp file with the cronkey that setup will read and use
 echo "<?php" > /var/www/${domain}/uploads/tmp/cronkey.php
