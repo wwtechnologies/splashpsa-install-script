@@ -1,24 +1,33 @@
 #!/bin/bash
 
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+# Check if the user is root
 check_root() {
     if [[ $EUID -ne 0 ]]; then
-        echo -e "\033[0;31mThis script must be run as root.\e[0m"
+        echo -e "${RED}Error: This script must be run as root.${NC}"
         exit 1
     fi
 }
 
+# Check OS
 check_os() {
     if ! grep -E "22.04|12" "/etc/"*"release" &>/dev/null; then
-        echo -e "\033[0;31mThis script will only work on Ubuntu 22.04 or Debian 12\e[0m"
+        echo -e "${RED}Error: This script only supports Ubuntu 22.04 or Debian 12.${NC}"
         exit 1
     fi
 }
 
+# Get domain name from user
 get_domain() {
     while [[ $domain != *[.]*[.]* ]]; do
-        echo -ne "Enter your Fully Qualified Domain -- example (itflow.domain.com): "
+        echo -ne "Step 1: Please enter your Fully Qualified Domain (e.g., itflow.domain.com): "
         read domain
     done
+    echo -e "${GREEN}Domain set to: $domain${NC}"
 }
 
 generate_passwords() {
@@ -102,17 +111,56 @@ print_final_instructions() {
     echo "Database Password: ${mariadbpwd}"
 }
 
+# Welcome Message
+clear
+echo "############################################"
+echo "# Welcome to the ITFlow Installation Script #"
+echo "############################################"
+echo ""
+echo "Please follow the prompts to complete the installation."
+echo ""
+
 # Execution begins here
 check_root
 check_os
 get_domain
 generate_passwords
+
+echo -e "\n${GREEN}Step 2: Installing necessary packages...${NC}"
 install_packages
+
+echo -e "\n${GREEN}Step 3: Modifying PHP configurations...${NC}"
 modify_php_ini
+
+echo -e "\n${GREEN}Step 4: Setting up webroot...${NC}"
 setup_webroot
+
+echo -e "\n${GREEN}Step 5: Configuring Apache...${NC}"
 setup_apache
+
+echo -e "\n${GREEN}Step 6: Cloning ITFlow...${NC}"
 clone_itflow
+
+echo -e "\n${GREEN}Step 7: Setting up cron jobs...${NC}"
 setup_cronjobs
+
+echo -e "\n${GREEN}Step 8: Generating cron key file...${NC}"
 generate_cronkey_file
+
+echo -e "\n${GREEN}Step 9: Setting up MySQL...${NC}"
 setup_mysql
-print_final_instructions
+
+# Final message with clear instructions
+clear
+echo "######################################################"
+echo "# Installation Completed Successfully!                #"
+echo "######################################################"
+echo ""
+echo -e "Visit: ${GREEN}https://${domain}${NC} to complete the ITFlow setup."
+echo ""
+echo "Database setup details:"
+echo -e "Database User: ${GREEN}itflow${NC}"
+echo -e "Database Name: ${GREEN}itflow${NC}"
+echo -e "Database Password: ${GREEN}${mariadbpwd}${NC}"
+echo ""
+echo "Thank you for using our script!"
