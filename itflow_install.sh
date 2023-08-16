@@ -153,7 +153,7 @@ setup_mysql
 # Final message with clear instructions
 clear
 echo "######################################################"
-echo "# Installation Completed Successfully!                #"
+echo "# Installation Completed Successfully!               #"
 echo "######################################################"
 echo ""
 echo -e "Visit: ${GREEN}https://${domain}${NC} to complete the ITFlow setup."
