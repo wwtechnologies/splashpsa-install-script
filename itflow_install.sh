@@ -43,10 +43,9 @@ modify_php_ini() {
 }
 
 setup_firewall() {
-    # Uncomment the lines below if you want to enable UFW
-    # ufw allow OpenSSH
-    # ufw allow 'Apache Full'
-    # ufw enable
+    ufw allow OpenSSH
+    ufw allow 'Apache Full'
+    ufw enable
 }
 
 setup_webroot() {
@@ -113,7 +112,8 @@ get_domain
 generate_passwords
 install_packages
 modify_php_ini
-setup_firewall
+# Uncomment the line below if you want to enable UFW Firewall
+#setup_firewall
 setup_webroot
 setup_apache
 clone_itflow
