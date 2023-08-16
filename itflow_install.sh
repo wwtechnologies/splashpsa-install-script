@@ -28,7 +28,10 @@ generate_passwords() {
 
 install_packages() {
     apt-get update && apt-get -y upgrade
-    apt-get install -y apache2 mariadb-server php libapache2-mod-php php-intl php-mysqli php-curl php-imap php-mailparse rewrite libapache2-mod-md certbot python3-certbot-apache git sudo
+    apt-get install -y apache2 mariadb-server \
+    php libapache2-mod-php php-intl php-mysqli \
+    php-curl php-imap php-mailparse libapache2-mod-md \
+    certbot python3-certbot-apache git sudo rewrite
 
     mariadb_secure_installation
 
