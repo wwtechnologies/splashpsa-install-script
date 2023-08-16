@@ -31,7 +31,7 @@ install_packages() {
     apt-get install -y apache2 mariadb-server \
     php libapache2-mod-php php-intl php-mysqli \
     php-curl php-imap php-mailparse libapache2-mod-md \
-    certbot python3-certbot-apache git sudo rewrite
+    certbot python3-certbot-apache git sudo
 
     mariadb_secure_installation
 
@@ -43,12 +43,6 @@ modify_php_ini() {
     local PHP_INI_PATH="/etc/php/php.ini"
     sed -i 's/^;\?upload_max_filesize =.*/upload_max_filesize = 500M/' $PHP_INI_PATH
     sed -i 's/^;\?post_max_size =.*/post_max_size = 500M/' $PHP_INI_PATH
-}
-
-setup_firewall() {
-    ufw allow OpenSSH
-    ufw allow 'Apache Full'
-    ufw enable
 }
 
 setup_webroot() {
@@ -115,8 +109,6 @@ get_domain
 generate_passwords
 install_packages
 modify_php_ini
-# Uncomment the line below if you want to enable UFW Firewall
-#setup_firewall
 setup_webroot
 setup_apache
 clone_itflow
