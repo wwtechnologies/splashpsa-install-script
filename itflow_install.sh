@@ -49,7 +49,12 @@ install_packages() {
 }
 
 modify_php_ini() {
-    local PHP_INI_PATH="/etc/php/php.ini"
+    # Get the PHP version
+    PHP_VERSION=$(php -v | head -n 1 | awk '{print $2}' | cut -d '.' -f 1,2)
+    
+    # Set the PHP_INI_PATH
+    PHP_INI_PATH="/etc/php/${PHP_VERSION}/apache2/php.ini"
+
     sed -i 's/^;\?upload_max_filesize =.*/upload_max_filesize = 500M/' $PHP_INI_PATH
     sed -i 's/^;\?post_max_size =.*/post_max_size = 500M/' $PHP_INI_PATH
 }
