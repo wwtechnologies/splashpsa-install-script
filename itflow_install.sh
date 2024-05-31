@@ -15,10 +15,15 @@ check_root() {
 
 # Check OS
 check_os() {
-    if ! grep -E "22.04|12" "/etc/"*"release" &>/dev/null; then
-        echo -e "${RED}Error: This script only supports Ubuntu 22.04 or Debian 12.${NC}"
+    if ! grep -E "22.04|24.04|12" "/etc/"*"release" &>/dev/null; then
+        echo -e "${RED}Error: This script only supports Ubuntu 22.04, Ubuntu 24.04 or Debian 12.${NC}"
         exit 1
     fi
+}
+
+# Set Correct Timezone
+set_timezone() {
+    dpkg-reconfigure tzdata
 }
 
 # Get domain name from user
@@ -128,6 +133,7 @@ echo ""
 # Execution begins here
 check_root
 check_os
+set_timezone
 get_domain
 generate_passwords
 
