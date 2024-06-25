@@ -15,8 +15,8 @@ check_root() {
 
 # Check OS
 check_os() {
-    if ! grep -E "22.04|24.04|12" "/etc/"*"release" &>/dev/null; then
-        echo -e "${RED}Error: This script only supports Ubuntu 22.04, Ubuntu 24.04 or Debian 12.${NC}"
+    if ! grep -E "12" "/etc/"*"release" &>/dev/null; then
+        echo -e "${RED}Error: This script only supports Debian 12 at the moment, ubuntu 24.04 has a bug with mail-parse.${NC}"
         exit 1
     fi
 }
@@ -24,6 +24,7 @@ check_os() {
 # Set Correct Timezone
 set_timezone() {
     dpkg-reconfigure tzdata
+    clear
 }
 
 # Get domain name from user
@@ -45,7 +46,7 @@ install_packages() {
     apt-get install -y apache2 mariadb-server \
     php libapache2-mod-php php-intl php-mysqli php-gd \
     php-curl php-imap php-mailparse libapache2-mod-md \
-    certbot python3-certbot-apache git sudo whois
+    certbot python3-certbot-apache git sudo whois cron
 
     mariadb_secure_installation
 
@@ -110,15 +111,6 @@ setup_mysql() {
     mysql -e "CREATE USER itflow@localhost IDENTIFIED BY '${mariadbpwd}';"
     mysql -e "GRANT ALL PRIVILEGES ON itflow.* TO 'itflow'@'localhost';"
     mysql -e "FLUSH PRIVILEGES;"
-}
-
-print_final_instructions() {
-    echo "Please go to https://${domain} to finish setting up ITFlow"
-    echo ""
-    echo "In database setup section enter the following:"
-    echo "Database User: itflow"
-    echo "Database Name: itflow"
-    echo "Database Password: ${mariadbpwd}"
 }
 
 # Welcome Message
