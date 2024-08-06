@@ -34,7 +34,7 @@ check_root() {
 check_os() {
    if ! grep -E "22.04|24.04|12" "/etc/"*"release" &>/dev/null; then
         log "Error: This script only supports Ubuntu 24.04 or Debian 12."
-        echo -e "${RED}Error: This script only supports Ubuntu 24.04 or Debian 12.${NC}"
+        echo -e "${RED}Error: This script only supports Ubuntu 22.04 and 24.04 or Debian 12.${NC}"
         exit 1
     fi
 }
