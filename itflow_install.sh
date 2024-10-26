@@ -13,16 +13,17 @@ rm -f "$LOG_FILE"  # Delete the previous log file
 
 # Spinner function
 spin() {
-    local pid=$!
+    local pid=$1
+    local message=$2
     local delay=0.1
     local spinner='|/-\'
-    while [ -d /proc/$pid ]; do
+    while kill -0 $pid 2>/dev/null; do
         for i in $(seq 0 3); do
-            printf "\r${GREEN}$1 ${spinner:$i:1}${NC}"
+            printf "\r${GREEN}$message ${spinner:$i:1}${NC}"
             sleep $delay
         done
     done
-    printf "\r${GREEN}$1... Done!        ${NC}\n"
+    printf "\r${GREEN}$message... Done!        ${NC}\n"
 }
 
 # Function to log messages
@@ -64,8 +65,9 @@ install_packages() {
         php libapache2-mod-php php-intl php-mysqli php-gd \
         php-curl php-imap php-mailparse php-mbstring libapache2-mod-md \
         certbot python3-certbot-apache git sudo whois cron dnsutils expect >> "$LOG_FILE" 2>&1
-    ) & pid=$!
-    spin "Installing packages"
+    ) &
+    pid=$!
+    spin $pid "Installing packages"
     wait $pid
 }
 
@@ -116,9 +118,9 @@ get_domain() {
 generate_passwords() {
     log "Generating passwords"
     show_progress "5. Generating passwords..."
-    MARIADB_ROOT_PASSWORD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
-    mariadbpwd=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
-    cronkey=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
+    MARIADB_ROOT_PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)
+    mariadbpwd=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)
+    cronkey=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)
     echo -e "${GREEN}Passwords generated.${NC}"
 }
 
@@ -169,8 +171,9 @@ setup_apache() {
         systemctl restart apache2 >> "$LOG_FILE" 2>&1
 
         certbot --apache --non-interactive --agree-tos --register-unsafely-without-email --domains ${domain} >> "$LOG_FILE" 2>&1
-    ) & pid=$!
-    spin "Configuring Apache"
+    ) &
+    pid=$!
+    spin $pid "Configuring Apache"
     wait $pid
 }
 
@@ -181,8 +184,9 @@ clone_itflow() {
     (
         git clone https://github.com/itflow-org/itflow.git /var/www/${domain} >> "$LOG_FILE" 2>&1
         chown -R www-data:www-data /var/www/${domain}
-    ) & pid=$!
-    spin "Cloning ITFlow"
+    ) &
+    pid=$!
+    spin $pid "Cloning ITFlow"
     wait $pid
 }
 
@@ -246,7 +250,9 @@ setup_mariadb() {
 spawn mysql_secure_installation
 expect "Enter current password for root (enter for none):"
 send "\r"
-expect "Set root password? \[Y/n\]"
+expect "Switch to unix_socket authentication \[Y/n\]"
+send "n\r"
+expect "Change the root password? \[Y/n\]"
 send "Y\r"
 expect "New password:"
 send "$MARIADB_ROOT_PASSWORD\r"
@@ -269,8 +275,9 @@ EOF
     CREATE USER IF NOT EXISTS 'itflow'@'localhost' IDENTIFIED BY '${mariadbpwd}';
     GRANT ALL PRIVILEGES ON itflow.* TO 'itflow'@'localhost';
     FLUSH PRIVILEGES;" >> "$LOG_FILE" 2>&1
-    ) & pid=$!
-    spin "Securing MariaDB and setting up database"
+    ) &
+    pid=$!
+    spin $pid "Securing MariaDB and setting up database"
     wait $pid
 
     if [ $? -ne 0 ]; then
