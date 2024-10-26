@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e  # Exit immediately if a command exits with a non-zero status.
 
 # Colors for terminal output
 RED='\033[0;31m'
@@ -43,6 +44,7 @@ check_os() {
 install_packages() {
     log "Installing packages"
     show_progress "1. Installing packages..."
+    export DEBIAN_FRONTEND=noninteractive
     apt-get update >> "$LOG_FILE" 2>&1
     apt-get -y upgrade >> "$LOG_FILE" 2>&1
     apt-get install -y apache2 mariadb-server \
@@ -52,40 +54,18 @@ install_packages() {
     echo -e "${GREEN}Packages installed.${NC}"
 }
 
-# Function to check for required binaries
-check_required_binaries() {
-    log "Checking packages"
-    show_progress "2. Checking packages..."
-
-    local binaries=("dpkg-reconfigure" "a2ensite" "a2dissite" "a2enmod")
-
-    for bin in "${binaries[@]}"; do
-        if ! command -v $bin &> /dev/null; then
-            if [ -x "/usr/sbin/$bin" ]; then
-                export PATH="$PATH:/usr/sbin"
-            else
-                log "Error: $bin not found in PATH or /usr/sbin"
-                echo -e "${RED}Error: $bin not found. Please make sure it is installed and in your PATH or in /usr/sbin.${NC}"
-                exit 1
-            fi
-        fi
-    done
-    echo -e "${GREEN}All required binaries are present.${NC}"
-}
-
 # Set the correct timezone
 set_timezone() {
     log "Configuring timezone"
     show_progress "3. Configuring timezone..."
 
     # Prompt user for timezone
-    read -p "$(echo -e "${YELLOW}Please enter your timezone (e.g., 'America/New_York'): ${NC}")" user_timezone < /dev/tty
+    read -p "$(echo -e "${YELLOW}Please enter your timezone (e.g., 'America/New_York'): ${NC}")" user_timezone
 
     # Validate the timezone
     if [ -f "/usr/share/zoneinfo/$user_timezone" ]; then
         ln -sf "/usr/share/zoneinfo/$user_timezone" /etc/localtime
         echo "$user_timezone" > /etc/timezone
-        dpkg-reconfigure -f noninteractive tzdata >> "$LOG_FILE" 2>&1
         echo -e "${GREEN}Timezone set to $user_timezone.${NC}"
     else
         echo -e "${RED}Invalid timezone. Please make sure the timezone is correct.${NC}"
@@ -96,7 +76,7 @@ set_timezone() {
 # Get domain name from user
 get_domain() {
     while true; do
-        read -p "$(echo -e "${YELLOW}4. Enter your Fully Qualified Domain Name (e.g., itflow.domain.com): ${NC}")" domain < /dev/tty
+        read -p "$(echo -e "${YELLOW}4. Enter your Fully Qualified Domain Name (e.g., itflow.domain.com): ${NC}")" domain
         if [[ $domain == *.*.* ]]; then
             break
         else
