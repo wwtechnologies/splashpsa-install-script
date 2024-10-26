@@ -11,21 +11,6 @@ LOG_FILE="/var/log/itflow_install.log"
 # Clear previous installation log
 rm -f "$LOG_FILE"  # Delete the previous log file
 
-# Spinner function
-spin() {
-    local pid=$1
-    local message=$2
-    local delay=0.1
-    local spinner='|/-\'
-    while kill -0 $pid 2>/dev/null; do
-        for i in $(seq 0 3); do
-            printf "\r${GREEN}$message ${spinner:$i:1}${NC}"
-            sleep $delay
-        done
-    done
-    printf "\r${GREEN}$message... Done!        ${NC}\n"
-}
-
 # Function to log messages
 log() {
     echo "$(date): $1" >> "$LOG_FILE"
@@ -58,17 +43,13 @@ check_os() {
 install_packages() {
     log "Installing packages"
     show_progress "1. Installing packages..."
-    (
-        apt-get update >> "$LOG_FILE" 2>&1
-        apt-get -y upgrade >> "$LOG_FILE" 2>&1
-        apt-get install -y apache2 mariadb-server \
-        php libapache2-mod-php php-intl php-mysqli php-gd \
-        php-curl php-imap php-mailparse php-mbstring libapache2-mod-md \
-        certbot python3-certbot-apache git sudo whois cron dnsutils expect >> "$LOG_FILE" 2>&1
-    ) &
-    pid=$!
-    spin $pid "Installing packages"
-    wait $pid
+    apt-get update >> "$LOG_FILE" 2>&1
+    apt-get -y upgrade >> "$LOG_FILE" 2>&1
+    apt-get install -y apache2 mariadb-server \
+    php libapache2-mod-php php-intl php-mysqli php-gd \
+    php-curl php-imap php-mailparse php-mbstring libapache2-mod-md \
+    certbot python3-certbot-apache git sudo whois cron dnsutils expect >> "$LOG_FILE" 2>&1
+    echo -e "${GREEN}Packages installed.${NC}"
 }
 
 # Function to check for required binaries
@@ -98,8 +79,7 @@ set_timezone() {
     show_progress "3. Configuring timezone..."
 
     # Prompt user for timezone
-    echo -e "${YELLOW}Please enter your timezone (e.g., 'America/New_York'):${NC}"
-    read user_timezone
+    read -p "$(echo -e "${YELLOW}Please enter your timezone (e.g., 'America/New_York'): ${NC}")" user_timezone < /dev/tty
 
     # Validate the timezone
     if [ -f "/usr/share/zoneinfo/$user_timezone" ]; then
@@ -116,8 +96,7 @@ set_timezone() {
 # Get domain name from user
 get_domain() {
     while true; do
-        echo -ne "${YELLOW}4. Enter your Fully Qualified Domain Name (e.g., itflow.domain.com): ${NC}"
-        read domain
+        read -p "$(echo -e "${YELLOW}4. Enter your Fully Qualified Domain Name (e.g., itflow.domain.com): ${NC}")" domain < /dev/tty
         if [[ $domain == *.*.* ]]; then
             break
         else
@@ -166,11 +145,10 @@ setup_webroot() {
 setup_apache() {
     log "Configuring Apache"
     show_progress "8. Configuring Apache..."
-    (
-        a2enmod md >> "$LOG_FILE" 2>&1
-        a2enmod ssl >> "$LOG_FILE" 2>&1
-        
-        apache2_conf="<VirtualHost *:80>
+    a2enmod md >> "$LOG_FILE" 2>&1
+    a2enmod ssl >> "$LOG_FILE" 2>&1
+    
+    apache2_conf="<VirtualHost *:80>
     ServerAdmin webmaster@localhost
     ServerName ${domain}
     DocumentRoot /var/www/${domain}
@@ -178,30 +156,23 @@ setup_apache() {
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>"
 
-        echo "${apache2_conf}" > /etc/apache2/sites-available/${domain}.conf
+    echo "${apache2_conf}" > /etc/apache2/sites-available/${domain}.conf
 
-        a2ensite ${domain}.conf >> "$LOG_FILE" 2>&1
-        a2dissite 000-default.conf >> "$LOG_FILE" 2>&1
-        systemctl restart apache2 >> "$LOG_FILE" 2>&1
+    a2ensite ${domain}.conf >> "$LOG_FILE" 2>&1
+    a2dissite 000-default.conf >> "$LOG_FILE" 2>&1
+    systemctl restart apache2 >> "$LOG_FILE" 2>&1
 
-        certbot --apache --non-interactive --agree-tos --register-unsafely-without-email --domains ${domain} >> "$LOG_FILE" 2>&1
-    ) &
-    pid=$!
-    spin $pid "Configuring Apache"
-    wait $pid
+    certbot --apache --non-interactive --agree-tos --register-unsafely-without-email --domains ${domain} >> "$LOG_FILE" 2>&1
+    echo -e "${GREEN}Apache configured and SSL certificate obtained.${NC}"
 }
 
 # Clone ITFlow repository
 clone_itflow() {
     log "Cloning ITFlow"
     show_progress "9. Cloning ITFlow..."
-    (
-        git clone https://github.com/itflow-org/itflow.git /var/www/${domain} >> "$LOG_FILE" 2>&1
-        chown -R www-data:www-data /var/www/${domain}
-    ) &
-    pid=$!
-    spin $pid "Cloning ITFlow"
-    wait $pid
+    git clone https://github.com/itflow-org/itflow.git /var/www/${domain} >> "$LOG_FILE" 2>&1
+    chown -R www-data:www-data /var/www/${domain}
+    echo -e "${GREEN}ITFlow cloned to /var/www/${domain}.${NC}"
 }
 
 # Setup cron jobs
@@ -259,7 +230,6 @@ setup_mariadb() {
     fi
 
     # Use expect to automate mysql_secure_installation
-    (
     expect <<EOF >> "$LOG_FILE" 2>&1
 spawn mysql_secure_installation
 expect "Enter current password for root (enter for none):"
@@ -289,10 +259,6 @@ EOF
     CREATE USER IF NOT EXISTS 'itflow'@'localhost' IDENTIFIED BY '${mariadbpwd}';
     GRANT ALL PRIVILEGES ON itflow.* TO 'itflow'@'localhost';
     FLUSH PRIVILEGES;" >> "$LOG_FILE" 2>&1
-    ) &
-    pid=$!
-    spin $pid "Securing MariaDB and setting up database"
-    wait $pid
 
     if [ $? -ne 0 ]; then
         log "Error: Failed to configure MariaDB."
