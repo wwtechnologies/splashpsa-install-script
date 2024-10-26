@@ -131,8 +131,8 @@ setup_apache() {
     ServerAdmin webmaster@localhost
     ServerName ${domain}
     DocumentRoot /var/www/${domain}
-    ErrorLog /\${APACHE_LOG_DIR}/error.log
-    CustomLog /\${APACHE_LOG_DIR}/access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>"
 
     echo "${apache2_conf}" > /etc/apache2/sites-available/${domain}.conf
@@ -155,9 +155,31 @@ clone_itflow() {
 setup_cronjobs() {
     log "Setting up cron jobs"
     show_progress "10. Setting up cron jobs..."
-    (crontab -l 2>/dev/null; echo "0 2 * * * sudo -u www-data php /var/www/${domain}/cron.php ${cronkey}") | crontab -
-    (crontab -l 2>/dev/null; echo "* * * * * sudo -u www-data php /var/www/${domain}/cron_ticket_email_parser.php ${cronkey}") | crontab -
-    (crontab -l 2>/dev/null; echo "* * * * * sudo -u www-data php /var/www/${domain}/cron_mail_queue.php ${cronkey}") | crontab -
+
+    CRON_FILE="/etc/cron.d/itflow"
+
+    # Find the PHP binary
+    PHP_BIN=$(command -v php)
+
+    if [ -z "$PHP_BIN" ]; then
+        log "PHP binary not found!"
+        echo -e "${RED}PHP binary not found!${NC}"
+        exit 1
+    fi
+
+    # Write the cron entries into the file
+    echo "0 2 * * * www-data ${PHP_BIN} /var/www/${domain}/cron.php ${cronkey}" > $CRON_FILE
+    echo "* * * * * www-data ${PHP_BIN} /var/www/${domain}/cron_ticket_email_parser.php ${cronkey}" >> $CRON_FILE
+    echo "* * * * * www-data ${PHP_BIN} /var/www/${domain}/cron_mail_queue.php ${cronkey}" >> $CRON_FILE
+
+    # Ensure the cron file has the correct permissions
+    chmod 644 $CRON_FILE
+
+    # Set ownership to root
+    chown root:root $CRON_FILE
+
+    log "Cron jobs added to /etc/cron.d/itflow"
+    echo -e "${GREEN}Cron jobs added to /etc/cron.d/itflow${NC}"
 }
 
 # Generate cron key file
