@@ -46,7 +46,7 @@ install_packages() {
     apt-get update >> "$LOG_FILE" 2>&1 && apt-get -y upgrade >> "$LOG_FILE" 2>&1
     apt-get install -y apache2 mariadb-server \
     php libapache2-mod-php php-intl php-mysqli php-gd \
-    php-curl php-imap php-mailparse libapache2-mod-md \
+    php-curl php-imap php-mailparse php-mbstring libapache2-mod-md \
     certbot python3-certbot-apache git sudo whois cron dnsutils expect >> "$LOG_FILE" 2>&1
 }
 
@@ -95,6 +95,7 @@ generate_passwords() {
     mariadbpwd=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
     cronkey=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
 }
+
 
 # Modify PHP configuration
 modify_php_ini() {
