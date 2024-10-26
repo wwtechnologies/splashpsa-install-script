@@ -96,7 +96,21 @@ check_required_binaries() {
 set_timezone() {
     log "Configuring timezone"
     show_progress "3. Configuring timezone..."
-    dpkg-reconfigure tzdata
+
+    # Prompt user for timezone
+    echo -e "${YELLOW}Please enter your timezone (e.g., 'America/New_York'):${NC}"
+    read user_timezone
+
+    # Validate the timezone
+    if [ -f "/usr/share/zoneinfo/$user_timezone" ]; then
+        ln -sf "/usr/share/zoneinfo/$user_timezone" /etc/localtime
+        echo "$user_timezone" > /etc/timezone
+        dpkg-reconfigure -f noninteractive tzdata >> "$LOG_FILE" 2>&1
+        echo -e "${GREEN}Timezone set to $user_timezone.${NC}"
+    else
+        echo -e "${RED}Invalid timezone. Please make sure the timezone is correct.${NC}"
+        exit 1
+    fi
 }
 
 # Get domain name from user
