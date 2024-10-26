@@ -54,6 +54,27 @@ install_packages() {
     echo -e "${GREEN}Packages installed.${NC}"
 }
 
+# Function to check for required binaries
+check_required_binaries() {
+    log "Checking packages"
+    show_progress "2. Checking packages..."
+
+    local binaries=("dpkg-reconfigure" "a2ensite" "a2dissite" "a2enmod")
+
+    for bin in "${binaries[@]}"; do
+        if ! command -v $bin &> /dev/null; then
+            if [ -x "/usr/sbin/$bin" ]; then
+                export PATH="$PATH:/usr/sbin"
+            else
+                log "Error: $bin not found in PATH or /usr/sbin"
+                echo -e "${RED}Error: $bin not found. Please make sure it is installed and in your PATH or in /usr/sbin.${NC}"
+                exit 1
+            fi
+        fi
+    done
+    echo -e "${GREEN}All required binaries are present.${NC}"
+}
+
 # Set the correct timezone
 set_timezone() {
     log "Configuring timezone"
