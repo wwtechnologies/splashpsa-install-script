@@ -11,6 +11,20 @@ LOG_FILE="/var/log/itflow_install.log"
 # Clear previous installation log
 rm -f "$LOG_FILE"  # Delete the previous log file
 
+# Spinner function
+spin() {
+    local pid=$!
+    local delay=0.1
+    local spinner='|/-\'
+    while [ -d /proc/$pid ]; do
+        for i in $(seq 0 3); do
+            printf "\r${GREEN}$1 ${spinner:$i:1}${NC}"
+            sleep $delay
+        done
+    done
+    printf "\r${GREEN}$1... Done!        ${NC}\n"
+}
+
 # Function to log messages
 log() {
     echo "$(date): $1" >> "$LOG_FILE"
@@ -43,17 +57,22 @@ check_os() {
 install_packages() {
     log "Installing packages"
     show_progress "1. Installing packages..."
-    apt-get update >> "$LOG_FILE" 2>&1 && apt-get -y upgrade >> "$LOG_FILE" 2>&1
-    apt-get install -y apache2 mariadb-server \
-    php libapache2-mod-php php-intl php-mysqli php-gd \
-    php-curl php-imap php-mailparse php-mbstring libapache2-mod-md \
-    certbot python3-certbot-apache git sudo whois cron dnsutils expect >> "$LOG_FILE" 2>&1
+    (
+        apt-get update >> "$LOG_FILE" 2>&1
+        apt-get -y upgrade >> "$LOG_FILE" 2>&1
+        apt-get install -y apache2 mariadb-server \
+        php libapache2-mod-php php-intl php-mysqli php-gd \
+        php-curl php-imap php-mailparse php-mbstring libapache2-mod-md \
+        certbot python3-certbot-apache git sudo whois cron dnsutils expect >> "$LOG_FILE" 2>&1
+    ) & pid=$!
+    spin "Installing packages"
+    wait $pid
 }
 
 # Function to check for required binaries
 check_required_binaries() {
-    log "Check packages"
-    show_progress "2. Check packages..."
+    log "Checking packages"
+    show_progress "2. Checking packages..."
 
     local binaries=("dpkg-reconfigure" "a2ensite" "a2dissite" "a2enmod")
 
@@ -68,6 +87,7 @@ check_required_binaries() {
             fi
         fi
     done
+    echo -e "${GREEN}All required binaries are present.${NC}"
 }
 
 # Set the correct timezone
@@ -79,9 +99,14 @@ set_timezone() {
 
 # Get domain name from user
 get_domain() {
-    while [[ $domain != *[.]*[.]* ]]; do
+    while true; do
         echo -ne "${YELLOW}4. Enter your Fully Qualified Domain Name (e.g., itflow.domain.com): ${NC}"
         read domain
+        if [[ $domain == *.*.* ]]; then
+            break
+        else
+            echo -e "${RED}Invalid domain. Please enter a valid Fully Qualified Domain Name.${NC}"
+        fi
     done
     log "Domain set to: $domain"
     echo -e "${GREEN}Domain set to: $domain${NC}"
@@ -94,21 +119,22 @@ generate_passwords() {
     MARIADB_ROOT_PASSWORD=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
     mariadbpwd=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
     cronkey=$(tr -dc 'A-Za-z0-9' < /dev/urandom | fold -w 20 | head -n 1)
+    echo -e "${GREEN}Passwords generated.${NC}"
 }
-
 
 # Modify PHP configuration
 modify_php_ini() {
     log "Modifying php.ini"
     show_progress "6. Configuring PHP..."
     # Get the PHP version
-    PHP_VERSION=$(php -v | head -n 1 | awk '{print $2}' | cut -d '.' -f 1,2)
+    PHP_VERSION=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
     
     # Set the PHP_INI_PATH
     PHP_INI_PATH="/etc/php/${PHP_VERSION}/apache2/php.ini"
 
     sed -i 's/^;\?upload_max_filesize =.*/upload_max_filesize = 500M/' $PHP_INI_PATH
     sed -i 's/^;\?post_max_size =.*/post_max_size = 500M/' $PHP_INI_PATH
+    echo -e "${GREEN}PHP configuration updated.${NC}"
 }
 
 # Setup web root directory
@@ -117,17 +143,18 @@ setup_webroot() {
     show_progress "7. Setting up webroot..."
     mkdir -p /var/www/${domain}
     chown -R www-data:www-data /var/www/
+    echo -e "${GREEN}Webroot set up at /var/www/${domain}.${NC}"
 }
 
 # Configure Apache
 setup_apache() {
     log "Configuring Apache"
     show_progress "8. Configuring Apache..."
-    
-    a2enmod md >> "$LOG_FILE" 2>&1
-    a2enmod ssl >> "$LOG_FILE" 2>&1
-    
-    apache2_conf="<VirtualHost *:80>
+    (
+        a2enmod md >> "$LOG_FILE" 2>&1
+        a2enmod ssl >> "$LOG_FILE" 2>&1
+        
+        apache2_conf="<VirtualHost *:80>
     ServerAdmin webmaster@localhost
     ServerName ${domain}
     DocumentRoot /var/www/${domain}
@@ -135,20 +162,28 @@ setup_apache() {
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>"
 
-    echo "${apache2_conf}" > /etc/apache2/sites-available/${domain}.conf
+        echo "${apache2_conf}" > /etc/apache2/sites-available/${domain}.conf
 
-    a2ensite ${domain}.conf >> "$LOG_FILE" 2>&1
-    a2dissite 000-default.conf >> "$LOG_FILE" 2>&1
-    systemctl restart apache2 >> "$LOG_FILE" 2>&1
+        a2ensite ${domain}.conf >> "$LOG_FILE" 2>&1
+        a2dissite 000-default.conf >> "$LOG_FILE" 2>&1
+        systemctl restart apache2 >> "$LOG_FILE" 2>&1
 
-    certbot --apache --non-interactive --agree-tos --register-unsafely-without-email --domains ${domain} >> "$LOG_FILE" 2>&1
+        certbot --apache --non-interactive --agree-tos --register-unsafely-without-email --domains ${domain} >> "$LOG_FILE" 2>&1
+    ) & pid=$!
+    spin "Configuring Apache"
+    wait $pid
 }
 
 # Clone ITFlow repository
 clone_itflow() {
     log "Cloning ITFlow"
     show_progress "9. Cloning ITFlow..."
-    git clone https://github.com/itflow-org/itflow.git /var/www/${domain} >> "$LOG_FILE" 2>&1
+    (
+        git clone https://github.com/itflow-org/itflow.git /var/www/${domain} >> "$LOG_FILE" 2>&1
+        chown -R www-data:www-data /var/www/${domain}
+    ) & pid=$!
+    spin "Cloning ITFlow"
+    wait $pid
 }
 
 # Setup cron jobs
@@ -179,7 +214,7 @@ setup_cronjobs() {
     chown root:root $CRON_FILE
 
     log "Cron jobs added to /etc/cron.d/itflow"
-    echo -e "${GREEN}Cron jobs added to /etc/cron.d/itflow${NC}"
+    echo -e "${GREEN}Cron jobs added to /etc/cron.d/itflow.${NC}"
 }
 
 # Generate cron key file
@@ -191,6 +226,7 @@ generate_cronkey_file() {
     echo "\$itflow_install_script_generated_cronkey = \"${cronkey}\";" >> /var/www/${domain}/uploads/tmp/cronkey.php
     echo "?>" >> /var/www/${domain}/uploads/tmp/cronkey.php
     chown -R www-data:www-data /var/www/
+    echo -e "${GREEN}Cron key file generated.${NC}"
 }
 
 # Setup MariaDB
@@ -205,26 +241,27 @@ setup_mariadb() {
     fi
 
     # Use expect to automate mysql_secure_installation
+    (
     expect <<EOF >> "$LOG_FILE" 2>&1
 spawn mysql_secure_installation
+expect "Enter current password for root (enter for none):"
 send "\r"
-send "n\r"
-send "y\r"
+expect "Set root password? \[Y/n\]"
+send "Y\r"
+expect "New password:"
 send "$MARIADB_ROOT_PASSWORD\r"
+expect "Re-enter new password:"
 send "$MARIADB_ROOT_PASSWORD\r"
-send "y\r"
-send "y\r"
-send "y\r"
-send "y\r"
+expect "Remove anonymous users? \[Y/n\]"
+send "Y\r"
+expect "Disallow root login remotely? \[Y/n\]"
+send "Y\r"
+expect "Remove test database and access to it? \[Y/n\]"
+send "Y\r"
+expect "Reload privilege tables now? \[Y/n\]"
+send "Y\r"
 expect eof
 EOF
-
-    # Check the previous execution
-    if [ $? -ne 0 ]; then
-        log "Error: mysql_secure_installation failed."
-        echo -e "${RED}Error: mysql_secure_installation failed.${NC}"
-        exit 1
-    fi
 
     # Create the database and itflow user
     mysql -u root -p"$MARIADB_ROOT_PASSWORD" -e "
@@ -232,8 +269,10 @@ EOF
     CREATE USER IF NOT EXISTS 'itflow'@'localhost' IDENTIFIED BY '${mariadbpwd}';
     GRANT ALL PRIVILEGES ON itflow.* TO 'itflow'@'localhost';
     FLUSH PRIVILEGES;" >> "$LOG_FILE" 2>&1
+    ) & pid=$!
+    spin "Securing MariaDB and setting up database"
+    wait $pid
 
-    # Check the previous execution
     if [ $? -ne 0 ]; then
         log "Error: Failed to configure MariaDB."
         echo -e "${RED}Error: Failed to configure MariaDB.${NC}"
