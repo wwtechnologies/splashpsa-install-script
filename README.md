@@ -1,17 +1,13 @@
 <!-- PROJECT LOGO -->
 <div align="center">
 
-  <h3 align="center">ITFlow</h3>
+  <h3 align="center">Splash PSA</h3>
 
   <p align="center">
     IT documentation, ticketing and accounting system for small MSPs.
     <br />
     <br />
-    <a href="https://demo.itflow.org"><strong>View demo</strong></a>
-    <br />
-    Username: <b>demo@demo</b> | Password: <b>demo</b>
-    <br />
-    <br />
+   
     <a href="https://itflow.org/#about">About</a>
     ·
     <a href="https://docs.itflow.org">Docs</a>
