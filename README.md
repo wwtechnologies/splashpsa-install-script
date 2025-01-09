@@ -1,5 +1,5 @@
 <!-- PROJECT LOGO -->
-<img src="[path/to/your-image.jpg](https://wrightwaytech.com/wp-content/uploads/2025/01/logo-for-a-product-called-splash-psa.png)" alt="Splash PSA Logo" width="500" height="300">
+<img src="https://wrightwaytech.com/wp-content/uploads/2025/01/logo-for-a-product-called-splash-psa.png" alt="Splash PSA Logo" width="500" height="300">
 
 <div align="center">
 
