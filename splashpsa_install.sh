@@ -327,7 +327,7 @@ EOF
 # Welcome Message
 clear
 echo -e "${GREEN}#############################################${NC}"
-echo -e "${GREEN}# Welcome to the ITFlow Installation Script #${NC}"
+echo -e "${GREEN}# Welcome to the Splash PSA Installation Script #${NC}"
 echo -e "${GREEN}#############################################${NC}"
 echo
 echo -e "${YELLOW}Please follow the prompts to complete the installation.${NC}"
