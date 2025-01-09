@@ -6,7 +6,7 @@
   <h1 align="center">Splash PSA</h1>
 
   <h3 align="center">
-    IT documentation, ticketing and accounting system for MSPs.
+    IT Documentation, Ticketing and Accounting System for MSPs with a primary focus on IT Managed Services.
   </h3>
 </div>
 
