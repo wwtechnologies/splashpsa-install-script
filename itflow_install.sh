@@ -161,7 +161,6 @@ generate_passwords() {
     show_progress "5. Generating passwords..."
     MARIADB_ROOT_PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)
     mariadbpwd=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)
-    cronkey=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)
     echo -e "${GREEN}Passwords generated.${NC}"
 }
 
@@ -244,9 +243,11 @@ setup_cronjobs() {
     fi
 
     # Write the cron entries into the file
-    echo "0 2 * * * www-data ${PHP_BIN} /var/www/${domain}/cron.php ${cronkey}" > $CRON_FILE
-    echo "* * * * * www-data ${PHP_BIN} /var/www/${domain}/cron_ticket_email_parser.php ${cronkey}" >> $CRON_FILE
-    echo "* * * * * www-data ${PHP_BIN} /var/www/${domain}/cron_mail_queue.php ${cronkey}" >> $CRON_FILE
+    echo "0 2 * * * www-data ${PHP_BIN} /var/www/${domain}/scripts/cron.php" > $CRON_FILE
+    echo "* * * * * www-data ${PHP_BIN} /var/www/${domain}/scripts/cron_ticket_email_parser.php" >> $CRON_FILE
+    echo "* * * * * www-data ${PHP_BIN} /var/www/${domain}/scripts/cron_mail_queue.php" >> $CRON_FILE
+    echo "0 3 * * * www-data ${PHP_BIN} /var/www/${domain}/scripts/cron_domain_refresher.php" >> $CRON_FILE
+    echo "0 4 * * * www-data ${PHP_BIN} /var/www/${domain}/scripts/cron_certificate_refresher.php" >> $CRON_FILE
 
     # Ensure the cron file has the correct permissions
     chmod 644 $CRON_FILE
@@ -258,22 +259,10 @@ setup_cronjobs() {
     echo -e "${GREEN}Cron jobs added to /etc/cron.d/itflow.${NC}"
 }
 
-# Generate cron key file
-generate_cronkey_file() {
-    log "Generating cron key file"
-    show_progress "11. Generating cron key file..."
-    mkdir -p /var/www/${domain}/uploads/tmp
-    echo "<?php" > /var/www/${domain}/uploads/tmp/cronkey.php
-    echo "\$itflow_install_script_generated_cronkey = \"${cronkey}\";" >> /var/www/${domain}/uploads/tmp/cronkey.php
-    echo "?>" >> /var/www/${domain}/uploads/tmp/cronkey.php
-    chown -R www-data:www-data /var/www/
-    echo -e "${GREEN}Cron key file generated.${NC}"
-}
-
 # Setup MariaDB
 setup_mariadb() {
     log "MariaDB installation"
-    show_progress "12. MariaDB installation..."
+    show_progress "11. MariaDB installation..."
 
     if ! dpkg -l | grep -q mariadb-server || ! systemctl is-active --quiet mariadb; then
         log "Error: MariaDB is not installed or not running."
@@ -346,7 +335,6 @@ setup_webroot
 setup_apache
 clone_itflow
 setup_cronjobs
-generate_cronkey_file
 setup_mariadb
 
 # Final message with instructions
