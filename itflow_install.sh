@@ -220,7 +220,7 @@ clone_itflow() {
     log "Cloning CKTC-ITFlow"
     show_progress "9. Cloning ITFlow..."
     {
-        git clone https://github.com/CKTC-INNOVATIVE/cktc-itflow.git /var/www/${domain} >> "$LOG_FILE" 2>&1
+        git clone https://github.com/defiantdevs/cktc-it.git /var/www/${domain} >> "$LOG_FILE" 2>&1
         chown -R www-data:www-data /var/www/${domain}
     } & spin "Cloning ITFlow repository"
     echo -e "${GREEN}ITFlow cloned to /var/www/${domain}.${NC}"
