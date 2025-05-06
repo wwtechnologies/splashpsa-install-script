@@ -238,6 +238,17 @@ FLUSH PRIVILEGES;
 SQL
 } & spin "MariaDB setup"
 
+# Import SQL
+SQL_DUMP="/var/www/${domain}/db.sql"
+if [ -f "$SQL_DUMP" ]; then
+    show_progress "Importing database..."
+    log "Importing database from $SQL_DUMP"
+    mysql -u itflow -p"${mariadbpwd}" itflow < "$SQL_DUMP"
+else
+    echo -e "${YELLOW}Database dump not found at $SQL_DUMP${NC}"
+    log "Database dump not found at $SQL_DUMP"
+fi
+
 # Config.php
 INSTALL_ID=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c ${#mariadbpwd})
 cat <<EOF > /var/www/${domain}/config.php
