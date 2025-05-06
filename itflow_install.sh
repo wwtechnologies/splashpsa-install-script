@@ -166,17 +166,10 @@ show_progress "Configuring Apache..."
     a2enmod md ssl rewrite
     mkdir -p /var/www/${domain}
 
-    if [[ "$ssl_type" != "none" ]]; then
-        http_redirect="Redirect permanent / https://${domain}/"
-    else
-        http_redirect="# No HTTPS redirection"
-    fi
-
     cat <<EOF > /etc/apache2/sites-available/${domain}.conf
 <VirtualHost *:80>
     ServerName ${domain}
     DocumentRoot /var/www/${domain}
-    ${http_redirect}
     ErrorLog \${APACHE_LOG_DIR}/error.log
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
