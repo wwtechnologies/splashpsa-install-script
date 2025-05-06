@@ -40,8 +40,6 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # CLI Args
-fi
-
 unattended=false
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -66,13 +64,12 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -h|--help)
-            echo -e "
-Usage: $0 [options]"
+            echo -e "\nUsage: $0 [options]"
             echo "  -d, --domain DOMAIN        Set the domain name (FQDN)"
-            echo "  -t, --timezone ZONE        Set the system timezone (e.g., America/New_York)"
-            echo "  -b, --branch BRANCH        Git branch to use: master (default) or develop"
+            echo "  -t, --timezone ZONE        Set the system timezone"
+            echo "  -b, --branch BRANCH        Git branch to use: master or develop"
             echo "  -s, --ssl TYPE             SSL type: letsencrypt, selfsigned, none"
-            echo "  -u, --unattended           Run in fully automated mode (no prompts)"
+            echo "  -u, --unattended           Run in fully automated mode"
             echo "  -h, --help                 Show this help message"
             exit 0
             ;;
@@ -81,35 +78,9 @@ Usage: $0 [options]"
             exit 1
             ;;
     esac
-    case $1 in
-        --domain)
-            domain="$2"
-            shift 2
-            ;;
-        --timezone)
-            timezone="$2"
-            shift 2
-            ;;
-        --branch)
-            branch="$2"
-            shift 2
-            ;;
-        --ssl)
-            ssl_type="$2"
-            shift 2
-            ;;
-        --unattended)
-            unattended=true
-            shift
-            ;;
-        *)
-            echo -e "${RED}Unknown option $1${NC}"
-            exit 1
-            ;;
-    esac
 done
 
-# Get timezone
+# Timezone
 if [ "$unattended" = true ]; then
     timezone=${timezone:-"America/New_York"}
 else
@@ -125,7 +96,7 @@ else
     exit 1
 fi
 
-# Get domain
+# Domain
 current_fqdn=$(hostname -f 2>/dev/null || echo "")
 domain=${domain:-$current_fqdn}
 if [ "$unattended" != true ]; then
@@ -137,35 +108,34 @@ if ! [[ $domain =~ ^([a-zA-Z0-9](-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,}$ ]]; then
     exit 1
 fi
 
-# Select branch
+# Branch
 branch=${branch:-master}
-if [ "$fully_auto" != true ]; then
-    echo -e "Available branches: master (stable), develop (development)"
-    read -p "Which branch to use [\${branch:-master} - default is 'master' for stable releases]: " input_branch
-    branch=${input_branch:-${branch:-master}}
+if [ "$unattended" != true ]; then
+    echo -e "Available branches: master, develop"
+    read -p "Which branch to use [${branch}]: " input_branch
+    branch=${input_branch:-$branch}
 fi
 if [[ "$branch" != "master" && "$branch" != "develop" ]]; then
-    echo -e "${RED}Invalid branch. Choose 'master' or 'develop'.${NC}"
+    echo -e "${RED}Invalid branch.${NC}"
     exit 1
 fi
 
-# Select SSL type
+# SSL
 ssl_type=${ssl_type:-letsencrypt}
-if [ "$fully_auto" != true ]; then
-    echo -e "SSL options: letsencrypt, selfsigned, none (use 'none' if behind a proxy with SSL)"
-    read -p "Choose SSL type [${ssl_type:-letsencrypt}]: " input_ssl
-    ssl_type=${input_ssl:-${ssl_type:-letsencrypt}}
+if [ "$unattended" != true ]; then
+    echo -e "SSL options: letsencrypt, selfsigned, none"
+    read -p "SSL type [${ssl_type}]: " input_ssl
+    ssl_type=${input_ssl:-$ssl_type}
 fi
 if [[ "$ssl_type" != "letsencrypt" && "$ssl_type" != "selfsigned" && "$ssl_type" != "none" ]]; then
-    echo -e "${RED}Invalid SSL option. Choose 'letsencrypt', 'selfsigned', or 'none'.${NC}"
+    echo -e "${RED}Invalid SSL option.${NC}"
     exit 1
 fi
 
-# Set HTTPS config flag
+# HTTPS config flag
+config_https_only="TRUE"
 if [[ "$ssl_type" == "none" ]]; then
     config_https_only="FALSE"
-else
-    config_https_only="TRUE"
 fi
 
 # Passwords
@@ -190,25 +160,23 @@ sed -i 's/^;\?upload_max_filesize =.*/upload_max_filesize = 500M/' "$PHP_INI_PAT
 sed -i 's/^;\?post_max_size =.*/post_max_size = 500M/' "$PHP_INI_PATH"
 sed -i 's/^;\?max_execution_time =.*/max_execution_time = 300/' "$PHP_INI_PATH"
 
-# Web root
-mkdir -p /var/www/${domain}
-
-# Apache
+# Apache setup
 show_progress "Configuring Apache..."
 {
     a2enmod md ssl rewrite
+    mkdir -p /var/www/${domain}
+
     if [[ "$ssl_type" != "none" ]]; then
-        redirect="Redirect permanent / https://${domain}/"
+        http_redirect="Redirect permanent / https://${domain}/"
     else
-        redirect="# No HTTPS redirection"
+        http_redirect="# No HTTPS redirection"
     fi
 
     cat <<EOF > /etc/apache2/sites-available/${domain}.conf
 <VirtualHost *:80>
-    ServerAdmin webmaster@localhost
     ServerName ${domain}
     DocumentRoot /var/www/${domain}
-    ${redirect}
+    ${http_redirect}
     ErrorLog \${APACHE_LOG_DIR}/error.log
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
@@ -216,7 +184,7 @@ EOF
 
     a2ensite ${domain}.conf
     a2dissite 000-default.conf
-    systemctl restart apache2
+    systemctl reload apache2
 
     if [[ "$ssl_type" == "letsencrypt" ]]; then
         certbot --apache --non-interactive --agree-tos --register-unsafely-without-email --domains ${domain}
@@ -228,7 +196,6 @@ EOF
 
         cat <<EOFSSL > /etc/apache2/sites-available/${domain}-ssl.conf
 <VirtualHost *:443>
-    ServerAdmin webmaster@localhost
     ServerName ${domain}
     DocumentRoot /var/www/${domain}
 
@@ -240,9 +207,8 @@ EOF
     CustomLog \${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOFSSL
-
         a2ensite ${domain}-ssl.conf
-        systemctl restart apache2
+        systemctl reload apache2
     else
         echo -e "${YELLOW}No SSL will be configured. HTTPS will not be available.${NC}"
     fi
