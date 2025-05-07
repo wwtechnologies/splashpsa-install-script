@@ -208,11 +208,11 @@ EOFSSL
 } & spin "Apache setup and SSL"
 
 # Git clone
-show_progress "Cloning ITFlow..."
+show_progress "Cloning Splash PSA..."
 {
-    git clone --branch ${branch} https://github.com/itflow-org/itflow.git /var/www/${domain}
+    git clone --branch ${branch} https://github.com/wwtechnologies/splash-psa.git /var/www/${domain}
     chown -R www-data:www-data /var/www/${domain}
-} & spin "Cloning ITFlow"
+} & spin "Cloning Splash PSA"
 
 # Cron jobs
 PHP_BIN=$(command -v php)
