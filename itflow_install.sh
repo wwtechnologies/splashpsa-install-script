@@ -115,7 +115,7 @@ if [ "$unattended" != true ]; then
     read -p "Which branch to use [${branch}]: " input_branch
     branch=${input_branch:-$branch}
 fi
-if [[ "$branch" != "master" && "$branch" != "develop" ]]; then
+if [[ "$branch" != "master" && "$branch" != "db-import-export" ]]; then
     echo -e "${RED}Invalid branch.${NC}"
     exit 1
 fi
