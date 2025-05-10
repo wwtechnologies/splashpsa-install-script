@@ -149,7 +149,7 @@ show_progress "Installing packages..."
     apt-get update && apt-get -y upgrade
     apt-get install -y apache2 mariadb-server \
         php libapache2-mod-php php-intl php-mysqli php-gd \
-        php-curl php-imap php-mailparse php-mbstring libapache2-mod-md \
+        php-curl php-imap php-mailparse php-mbstring php-zip libapache2-mod-md \
         certbot python3-certbot-apache git sudo whois cron dnsutils openssl
 } & spin "Installing packages"
 
